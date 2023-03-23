@@ -8,6 +8,13 @@ contract ERC20 {
     mapping(address => uint256) public balancesOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 amount
+    );
+
     constructor(string memory name_, string memory symbol_) {
         name = name_;
         symbol = symbol_;
@@ -31,23 +38,28 @@ contract ERC20 {
         address recipient,
         uint256 amount
     ) external returns (bool) {
-uint256 currentAllownce =allowance[sender][msg.sender];
-require (currentAllownce >= amount,"ERC20: tranfer amount exceeds allowance");
+        uint256 currentAllownce = allowance[sender][msg.sender];
+        require(
+            currentAllownce >= amount,
+            "ERC20: tranfer amount exceeds allowance"
+        );
 
-// update the allowance mapping
+        // update the allowance mapping
 
-allowance[sender][msg.sender] = currentAllownce -amount;
+        allowance[sender][msg.sender] = currentAllownce - amount;
+        emit Approval(sender, msg.sender, amount);
 
         return _transfer(sender, recipient, amount);
     }
-function approve(address spender, uint256 amount) external returns(bool){
-   require(spender != address(0), "ERC20: approved to the zero address");  
-   allowance[msg.sender][spender] = amount;
 
-   return true;
-}
+    function approve(address spender, uint256 amount) external returns (bool) {
+        require(spender != address(0), "ERC20: approved to the zero address");
+        allowance[msg.sender][spender] = amount;
 
+        emit Approval(msg.sender, spender, allowance[msg.sender][spender]);
 
+        return true;
+    }
 
     // Transfer Function
     function _transfer(
@@ -66,14 +78,17 @@ function approve(address spender, uint256 amount) external returns(bool){
 
         balancesOf[sender] = senderBalance - amount;
         balancesOf[recipient] += amount;
+
+        emit Transfer(sender, recipient, amount);
         return true;
     }
-function _mint(address to, uint256 amount) internal{
-      require(to != address(0), "ERC20:mint to the zero address");
 
-      totalSupply += amount;
-      balancesOf[to] += amount;
+    function _mint(address to, uint256 amount) internal {
+        require(to != address(0), "ERC20:mint to the zero address");
 
-}
+        emit Transfer(address(0), to, amount);
 
+        totalSupply += amount;
+        balancesOf[to] += amount;
+    }
 }
